@@ -1,0 +1,10 @@
+👉 Проверяю переменные:
+DOMAIN=meteor.crabdance.com
+HOST_IP=37.221.125.161
+SSH_USER=root
+LETSENCRYPT_EMAIL=beo.wulf.worker@gmail.com
+👉 Проверяю, что DNS указывает на нужный IP:
+DNS говорит: 37.221.125.161
+Ожидаем: 37.221.125.161
+👉 Проверяю SSH-доступ:
+ssh: connect to host 37.221.125.161 port 22: Network is unreachable
