@@ -1,0 +1,14 @@
+== Done ==
+Used configuration:
+  DOMAIN=meteor.crabdance.com
+  HOST_IP=37.221.125.161
+  SSH_USER=root
+  SSH_PORT=22
+  LETSENCRYPT_EMAIL=beo.wulf.worker@gmail.com
+  SYSTEM_USER=root
+
+Next steps:
+  1) (опционально) Создай vars/secrets.vault.yml и зашифруй: ansible-vault encrypt vars/secrets.vault.yml
+  2) Добавь секреты в GitHub: SSH_PRIVATE_KEY, TARGET_HOST, ANSIBLE_VAULT_PASSWORD
+  3) Коммит и пуш:
+     git add -A && git commit -m 'Bootstrap Ansible inventory, secrets placeholders and CI' && git push -u origin main
