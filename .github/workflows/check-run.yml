@@ -1,0 +1,71 @@
+name: check-run
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  lint-and-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Ansible toolchain
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Lint YAML
+        run: yamllint .
+
+      - name: Lint Ansible
+        run: ansible-lint
+
+      - name: Validate inventory
+        run: ansible-inventory -i inventory/hosts.yml --list
+
+      - name: Syntax check playbooks
+        run: |
+          ansible-playbook -i inventory/hosts.yml playbooks/ping.yml --syntax-check
+          ansible-playbook -i inventory/hosts.yml playbooks/smoke.yml --syntax-check
+
+      - name: Setup SSH agent (remote checks)
+        if: ${{ secrets.SSH_PRIVATE_KEY != '' && secrets.TARGET_HOST != '' }}
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Add known host
+        if: ${{ secrets.SSH_PRIVATE_KEY != '' && secrets.TARGET_HOST != '' }}
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H "${{ secrets.TARGET_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Prepare vault password (optional)
+        if: ${{ secrets.ANSIBLE_VAULT_PASSWORD != '' }}
+        run: |
+          echo "${{ secrets.ANSIBLE_VAULT_PASSWORD }}" > .vault_pass.txt
+
+      - name: Remote ping
+        if: ${{ secrets.SSH_PRIVATE_KEY != '' && secrets.TARGET_HOST != '' }}
+        run: ansible-playbook -i inventory/hosts.yml playbooks/ping.yml -v
+
+      - name: Smoke check (with secrets if present)
+        if: ${{ secrets.SSH_PRIVATE_KEY != '' && secrets.TARGET_HOST != '' }}
+        run: |
+          if [ -f vars/secrets.vault.yml ] && [ -s ./.vault_pass.txt ]; then
+            ansible-playbook -i inventory/hosts.yml playbooks/smoke.yml \
+              --vault-password-file .vault_pass.txt -v
+          else
+            ansible-playbook -i inventory/hosts.yml playbooks/smoke.yml \
+              -e @vars/secrets.vault.yml.example -v
+          fi

@@ -1,0 +1,4 @@
+site_domain: "meteor.crabdance.com"
+site_timezone: "UTC"
+system_user: "root"
+letsencrypt_email: "beo.wulf.worker@gmail.com"

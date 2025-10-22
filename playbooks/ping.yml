@@ -1,0 +1,6 @@
+- name: Connectivity ping
+  hosts: prod
+  gather_facts: false
+  tasks:
+    - name: Ensure we can reach the host
+      ansible.builtin.ping:

@@ -1,0 +1,45 @@
+- name: Smoke checks on prod host
+  hosts: prod
+  become: true
+  gather_facts: true
+  tasks:
+    - name: Show kernel/uname
+      ansible.builtin.command: uname -a
+      register: uname_out
+      changed_when: false
+
+    - name: Python presence
+      ansible.builtin.stat:
+        path: /usr/bin/python3
+      register: py
+
+    - name: Assert python exists
+      ansible.builtin.assert:
+        that:
+          - py.stat.exists
+        fail_msg: "Python3 not found at /usr/bin/python3"
+
+    - name: Check free disk on /
+      ansible.builtin.command: df -h /
+      register: disk
+      changed_when: false
+
+    - name: DNS resolves the site_domain (remote perspective)
+      ansible.builtin.getent:
+        database: hosts
+        key: "{{ site_domain }}"
+      register: dns
+
+    - name: Assert DNS had a result
+      ansible.builtin.assert:
+        that:
+          - dns.ansible_facts.getent_hosts is defined
+          - dns.ansible_facts.getent_hosts | length > 0
+        fail_msg: "DNS failed to resolve {{ site_domain }}"
+
+    - name: Summary
+      ansible.builtin.debug:
+        msg:
+          - "Domain: {{ site_domain }}"
+          - "Kernel: {{ uname_out.stdout | default('n/a') }}"
+          - "Disk: {{ (disk.stdout_lines | default([]))[:2] }}"
